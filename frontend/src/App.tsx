@@ -192,6 +192,14 @@ function App() {
                   <span>mUSD</span>
                   <span className="balance-value">{formatNumber(contracts.musdBalance, 2)} mUSD</span>
                 </div>
+                <div className="balance-item">
+                  <span>mBTC</span>
+                  <span className="balance-value">{formatNumber(contracts.mbtcBalance, 6)} mBTC</span>
+                </div>
+                <div className="balance-item">
+                  <span>mGOLD</span>
+                  <span className="balance-value">{formatNumber(contracts.mgoldBalance, 4)} mGOLD</span>
+                </div>
                 <button onClick={contracts.refresh} className="btn btn-outline btn-small" disabled={contracts.isLoading}>
                   {contracts.isLoading ? '刷新中...' : '刷新'}
                 </button>

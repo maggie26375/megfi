@@ -35,15 +35,24 @@ export function Swap({ signer, address, onRefresh }: SwapProps) {
       const results: AssetBalance[] = [];
 
       for (const asset of SYNTH_ASSETS) {
-        const token = new Contract(asset.address, TOKEN_ABI, signer);
-        const balance = await token.balanceOf(address);
-        const [price] = await oracle.getPrice(getCurrencyKey(asset.symbol));
+        try {
+          const token = new Contract(asset.address, TOKEN_ABI, signer);
+          const balance = await token.balanceOf(address);
+          const [price, isValid] = await oracle.getPrice(getCurrencyKey(asset.symbol));
 
-        results.push({
-          symbol: asset.symbol,
-          balance: formatEther(balance),
-          price: formatEther(price)
-        });
+          results.push({
+            symbol: asset.symbol,
+            balance: formatEther(balance),
+            price: isValid ? formatEther(price) : '0'
+          });
+        } catch (assetError) {
+          console.error(`Error loading ${asset.symbol}:`, assetError);
+          results.push({
+            symbol: asset.symbol,
+            balance: '0',
+            price: '0'
+          });
+        }
       }
 
       setBalances(results);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Contract, formatEther, parseEther, JsonRpcSigner } from 'ethers';
-import { ADDRESSES, VAULT_ABI, TOKEN_ABI, ORACLE_ABI, NETWORK } from '../config/contracts';
+import { ADDRESSES, VAULT_ABI, TOKEN_ABI, ORACLE_ABI, NETWORK, SYNTH_ASSETS } from '../config/contracts';
 
 interface Position {
   collateral: string;
@@ -21,6 +21,8 @@ export interface TxRecord {
 interface ContractsState {
   wethBalance: string;
   musdBalance: string;
+  mbtcBalance: string;
+  mgoldBalance: string;
   position: Position;
   ethPrice: string;
   allowance: string;
@@ -31,6 +33,8 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
   const [state, setState] = useState<ContractsState>({
     wethBalance: '0',
     musdBalance: '0',
+    mbtcBalance: '0',
+    mgoldBalance: '0',
     position: {
       collateral: '0',
       debt: '0',
@@ -80,12 +84,16 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
       const vault = new Contract(ADDRESSES.collateralVault, VAULT_ABI, signer);
       const weth = new Contract(ADDRESSES.mockWETH, TOKEN_ABI, signer);
       const musd = new Contract(ADDRESSES.mUSD, TOKEN_ABI, signer);
+      const mbtc = new Contract(ADDRESSES.mBTC, TOKEN_ABI, signer);
+      const mgold = new Contract(ADDRESSES.mGOLD, TOKEN_ABI, signer);
       const oracle = new Contract(ADDRESSES.priceOracle, ORACLE_ABI, signer);
 
       // 并行获取所有数据
       const [
         wethBalance,
         musdBalance,
+        mbtcBalance,
+        mgoldBalance,
         position,
         maxMintable,
         ethPrice,
@@ -94,6 +102,8 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
       ] = await Promise.all([
         weth.balanceOf(address),
         musd.balanceOf(address),
+        mbtc.balanceOf(address),
+        mgold.balanceOf(address),
         vault.getPosition(address),
         vault.maxMintable(address),
         oracle.getCollateralPrice(),
@@ -104,6 +114,8 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
       setState({
         wethBalance: formatEther(wethBalance),
         musdBalance: formatEther(musdBalance),
+        mbtcBalance: formatEther(mbtcBalance),
+        mgoldBalance: formatEther(mgoldBalance),
         position: {
           collateral: formatEther(position.collateral),
           debt: formatEther(position.debt),
