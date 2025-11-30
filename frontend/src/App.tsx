@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useWallet } from './hooks/useWallet';
-import { useContracts } from './hooks/useContracts';
+import { useContracts, TxRecord } from './hooks/useContracts';
+import { Swap } from './components/Swap';
 import './App.css';
 
 function App() {
   const wallet = useWallet();
   const contracts = useContracts(wallet.signer, wallet.address);
 
+  const [activeTab, setActiveTab] = useState<'vault' | 'swap'>('vault');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [mintAmount, setMintAmount] = useState('');
@@ -26,6 +28,28 @@ function App() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  // 格式化交易哈希
+  const formatTxHash = (hash: string) => {
+    return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
+  };
+
+  // 格式化时间
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
+  // 获取交易类型显示名称
+  const getTxTypeName = (type: TxRecord['type']) => {
+    const names = {
+      deposit: '存入',
+      withdraw: '提取',
+      mint: '铸造',
+      burn: '还款',
+      approve: '授权'
+    };
+    return names[type];
+  };
+
   // 处理交易
   const handleTx = async (action: () => Promise<void>, successMsg: string) => {
     setError('');
@@ -41,6 +65,12 @@ function App() {
 
   // 需要授权？
   const needsApproval = parseFloat(contracts.allowance) < parseFloat(depositAmount || '0');
+
+  // 抵押率警告
+  const collateralRatio = parseFloat(contracts.position.collateralRatio);
+  const hasDebt = parseFloat(contracts.position.debt) > 0;
+  const isLowRatio = hasDebt && collateralRatio > 0 && collateralRatio < 1.5;
+  const isDangerRatio = hasDebt && collateralRatio > 0 && collateralRatio < 1.3;
 
   return (
     <div className="app">
@@ -80,6 +110,56 @@ function App() {
           </div>
         ) : (
           <>
+            {/* 交易进行中的遮罩 */}
+            {contracts.txPending && (
+              <div className="tx-overlay">
+                <div className="tx-modal">
+                  <div className="spinner"></div>
+                  <p>交易处理中...</p>
+                  {contracts.currentTxHash && (
+                    <a
+                      href={contracts.getEtherscanUrl(contracts.currentTxHash)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tx-link"
+                    >
+                      在 Etherscan 查看
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 抵押率警告 */}
+            {isDangerRatio && (
+              <div className="alert alert-danger">
+                ⚠️ 警告：抵押率过低 ({formatNumber((collateralRatio * 100).toString())}%)，接近清算线 (120%)！请立即增加抵押品或还款。
+              </div>
+            )}
+            {isLowRatio && !isDangerRatio && (
+              <div className="alert alert-warning">
+                ⚠️ 注意：抵押率较低 ({formatNumber((collateralRatio * 100).toString())}%)，建议增加抵押品或还款以降低清算风险。
+              </div>
+            )}
+
+            {/* 标签切换 */}
+            <div className="tab-container">
+              <button
+                className={`tab-btn ${activeTab === 'vault' ? 'active' : ''}`}
+                onClick={() => setActiveTab('vault')}
+              >
+                Vault
+              </button>
+              <button
+                className={`tab-btn ${activeTab === 'swap' ? 'active' : ''}`}
+                onClick={() => setActiveTab('swap')}
+              >
+                Swap
+              </button>
+            </div>
+
+            {activeTab === 'vault' && (
+            <>
             {/* 市场信息 */}
             <div className="market-info">
               <div className="info-card">
@@ -115,6 +195,37 @@ function App() {
                 <button onClick={contracts.refresh} className="btn btn-outline btn-small" disabled={contracts.isLoading}>
                   {contracts.isLoading ? '刷新中...' : '刷新'}
                 </button>
+
+                {/* 交易历史 */}
+                {contracts.txHistory.length > 0 && (
+                  <div className="tx-history">
+                    <h4>最近交易</h4>
+                    {contracts.txHistory.slice(0, 5).map((tx) => (
+                      <div key={tx.hash} className={`tx-item tx-${tx.status}`}>
+                        <div className="tx-info">
+                          <span className="tx-type">{getTxTypeName(tx.type)}</span>
+                          <span className="tx-amount">
+                            {tx.amount === 'unlimited' ? '无限' : `${formatNumber(tx.amount, 4)}`}
+                          </span>
+                        </div>
+                        <div className="tx-meta">
+                          <span className="tx-time">{formatTime(tx.timestamp)}</span>
+                          <a
+                            href={contracts.getEtherscanUrl(tx.hash)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="tx-hash"
+                          >
+                            {formatTxHash(tx.hash)}
+                          </a>
+                          <span className={`tx-status status-${tx.status}`}>
+                            {tx.status === 'pending' ? '⏳' : tx.status === 'confirmed' ? '✓' : '✗'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* 中间：仓位信息 */}
@@ -135,11 +246,11 @@ function App() {
                     <span>债务</span>
                     <span className="position-value">{formatNumber(contracts.position.debt, 2)} mUSD</span>
                   </div>
-                  <div className="position-item">
+                  <div className={`position-item ${isDangerRatio ? 'danger-bg' : isLowRatio ? 'warning-bg' : ''}`}>
                     <span>抵押率</span>
-                    <span className={`position-value ${parseFloat(contracts.position.collateralRatio) > 0 && parseFloat(contracts.position.collateralRatio) < 1.5 ? 'danger' : ''}`}>
-                      {parseFloat(contracts.position.debt) > 0
-                        ? `${formatNumber((parseFloat(contracts.position.collateralRatio) * 100).toString())}%`
+                    <span className={`position-value ${isDangerRatio ? 'danger' : isLowRatio ? 'warning' : ''}`}>
+                      {hasDebt
+                        ? `${formatNumber((collateralRatio * 100).toString())}%`
                         : '-'}
                     </span>
                   </div>
@@ -269,6 +380,16 @@ function App() {
                 </div>
               </div>
             </div>
+            </>
+            )}
+
+            {activeTab === 'swap' && (
+              <Swap
+                signer={wallet.signer}
+                address={wallet.address}
+                onRefresh={contracts.refresh}
+              />
+            )}
           </>
         )}
       </main>

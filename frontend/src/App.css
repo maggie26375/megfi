@@ -380,6 +380,441 @@ body {
   text-decoration: underline;
 }
 
+/* Transaction Overlay */
+.tx-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.tx-modal {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 2rem 3rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.tx-modal p {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.tx-link {
+  color: #00d4ff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.tx-link:hover {
+  text-decoration: underline;
+}
+
+/* Transaction History */
+.tx-history {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tx-history h4 {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.75rem;
+}
+
+.tx-item {
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.tx-item.tx-pending {
+  border-left: 3px solid #f59e0b;
+}
+
+.tx-item.tx-confirmed {
+  border-left: 3px solid #10b981;
+}
+
+.tx-item.tx-failed {
+  border-left: 3px solid #ef4444;
+}
+
+.tx-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.tx-type {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.tx-amount {
+  color: #00d4ff;
+}
+
+.tx-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.tx-hash {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+}
+
+.tx-hash:hover {
+  color: #00d4ff;
+}
+
+.tx-status {
+  font-size: 0.85rem;
+}
+
+.status-pending { color: #f59e0b; }
+.status-confirmed { color: #10b981; }
+.status-failed { color: #ef4444; }
+
+/* Warning Alerts */
+.alert-warning {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+}
+
+.alert-danger {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #f87171;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Position warning backgrounds */
+.position-item.warning-bg {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.position-item.danger-bg {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.position-value.warning {
+  color: #fbbf24;
+}
+
+.position-value.danger {
+  color: #f87171;
+}
+
+/* Tab Navigation */
+.tab-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.tab-btn {
+  padding: 0.75rem 2rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: linear-gradient(90deg, #00d4ff, #7c3aed);
+  color: #fff;
+}
+
+/* Swap Container */
+.swap-container {
+  max-width: 480px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 1.5rem;
+}
+
+.swap-container h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #fff;
+}
+
+/* Swap Pending */
+.swap-pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(0, 212, 255, 0.1);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.swap-pending a {
+  color: #00d4ff;
+  text-decoration: none;
+}
+
+.swap-pending a:hover {
+  text-decoration: underline;
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Swap Messages */
+.swap-error {
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 8px;
+  color: #f87171;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.swap-success {
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 8px;
+  color: #34d399;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Swap Input Group */
+.swap-input-group {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.swap-input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.swap-balance {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.swap-balance:hover {
+  color: #00d4ff;
+}
+
+.swap-input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.swap-input-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  outline: none;
+  min-width: 0;
+}
+
+.swap-input-row input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.swap-input-row select {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  min-width: 100px;
+  text-align: center;
+}
+
+.swap-input-row select:focus {
+  border-color: #00d4ff;
+}
+
+.swap-input-row select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.swap-input-footer {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Swap Switch Button */
+.swap-switch {
+  display: flex;
+  justify-content: center;
+  margin: -0.25rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.swap-switch span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.swap-switch span:hover {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: #00d4ff;
+  transform: rotate(180deg);
+}
+
+/* Swap Info */
+.swap-info {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.swap-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.swap-info-row span:first-child {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.swap-info-row span:last-child {
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Swap Button */
+.btn-swap {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  margin-top: 1rem;
+}
+
+/* Swap Prices */
+.swap-prices {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.swap-prices h4 {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.price-row span:first-child {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.price-row span:last-child {
+  color: #00d4ff;
+  font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .content-grid {
