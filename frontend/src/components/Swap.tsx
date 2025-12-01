@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Contract, formatEther, parseEther, JsonRpcSigner } from 'ethers';
 import { ADDRESSES, SYNTH_ASSETS, TOKEN_ABI, SWAP_ABI, ORACLE_ABI, getCurrencyKey, NETWORK } from '../config/contracts';
+import { TxRecord, loadTxHistory, saveTxHistory } from '../hooks/useContracts';
 
 interface SwapProps {
   signer: JsonRpcSigner | null;
@@ -96,6 +97,33 @@ export function Swap({ signer, address, onRefresh }: SwapProps) {
     return () => clearTimeout(timer);
   }, [previewSwap]);
 
+  // 保存交易记录
+  const addSwapTxRecord = useCallback((hash: string, amount: string, status: TxRecord['status']) => {
+    if (!address) {
+      console.log('addSwapTxRecord: no address');
+      return;
+    }
+    const record: TxRecord = {
+      hash,
+      type: 'swap',
+      amount,
+      timestamp: Date.now(),
+      status
+    };
+    const history = loadTxHistory(address);
+    const newHistory = [record, ...history].slice(0, 20);
+    saveTxHistory(address, newHistory);
+    console.log('Swap tx saved:', hash, 'total history:', newHistory.length);
+  }, [address]);
+
+  // 更新交易状态
+  const updateSwapTxStatus = useCallback((hash: string, status: TxRecord['status']) => {
+    if (!address) return;
+    const history = loadTxHistory(address);
+    const newHistory = history.map(tx => tx.hash === hash ? { ...tx, status } : tx);
+    saveTxHistory(address, newHistory);
+  }, [address]);
+
   // 执行交换
   const executeSwap = async () => {
     if (!signer || !fromAmount || !toAmount) return;
@@ -116,7 +144,14 @@ export function Swap({ signer, address, onRefresh }: SwapProps) {
 
       const tx = await swap.swap(fromKey, toKey, amount, minAmount);
       setTxHash(tx.hash);
+
+      // 记录交易 (pending)
+      addSwapTxRecord(tx.hash, `${fromAmount} ${fromAsset} → ${toAsset}`, 'pending');
+
       await tx.wait();
+
+      // 更新交易状态为确认
+      updateSwapTxStatus(tx.hash, 'confirmed');
 
       setSuccess(`成功将 ${fromAmount} ${fromAsset} 换成 ${toAmount} ${toAsset}`);
       setFromAmount('');
@@ -126,6 +161,9 @@ export function Swap({ signer, address, onRefresh }: SwapProps) {
       onRefresh();
     } catch (e: any) {
       console.error('Swap error:', e);
+      if (txHash) {
+        updateSwapTxStatus(txHash, 'failed');
+      }
       setError(e.reason || e.message || '交换失败');
     } finally {
       setIsPending(false);

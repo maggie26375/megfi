@@ -12,7 +12,7 @@ interface Position {
 // 交易记录类型
 export interface TxRecord {
   hash: string;
-  type: 'deposit' | 'withdraw' | 'mint' | 'burn' | 'approve';
+  type: 'deposit' | 'withdraw' | 'mint' | 'burn' | 'approve' | 'swap';
   amount: string;
   timestamp: number;
   status: 'pending' | 'confirmed' | 'failed';
@@ -28,6 +28,34 @@ interface ContractsState {
   allowance: string;
   isLoading: boolean;
 }
+
+// localStorage key for transaction history
+const TX_HISTORY_KEY = 'megfi_tx_history';
+
+// Load transaction history from localStorage
+export const loadTxHistory = (walletAddress: string): TxRecord[] => {
+  try {
+    const stored = localStorage.getItem(`${TX_HISTORY_KEY}_${walletAddress.toLowerCase()}`);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to load tx history:', e);
+  }
+  return [];
+};
+
+// Save transaction history to localStorage
+export const saveTxHistory = (walletAddress: string, history: TxRecord[]) => {
+  try {
+    localStorage.setItem(
+      `${TX_HISTORY_KEY}_${walletAddress.toLowerCase()}`,
+      JSON.stringify(history.slice(0, 20)) // Keep last 20 transactions
+    );
+  } catch (e) {
+    console.error('Failed to save tx history:', e);
+  }
+};
 
 export function useContracts(signer: JsonRpcSigner | null, address: string | null) {
   const [state, setState] = useState<ContractsState>({
@@ -50,6 +78,16 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
   const [currentTxHash, setCurrentTxHash] = useState<string | null>(null);
   const [txHistory, setTxHistory] = useState<TxRecord[]>([]);
 
+  // Load transaction history when wallet connects
+  useEffect(() => {
+    if (address) {
+      const history = loadTxHistory(address);
+      setTxHistory(history);
+    } else {
+      setTxHistory([]);
+    }
+  }, [address]);
+
   // 添加交易记录
   const addTxRecord = useCallback((hash: string, type: TxRecord['type'], amount: string) => {
     const record: TxRecord = {
@@ -59,15 +97,25 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
       timestamp: Date.now(),
       status: 'pending'
     };
-    setTxHistory(prev => [record, ...prev].slice(0, 10)); // 保留最近10条
-  }, []);
+    setTxHistory(prev => {
+      const newHistory = [record, ...prev].slice(0, 20);
+      if (address) {
+        saveTxHistory(address, newHistory);
+      }
+      return newHistory;
+    });
+  }, [address]);
 
   // 更新交易状态
   const updateTxStatus = useCallback((hash: string, status: TxRecord['status']) => {
-    setTxHistory(prev =>
-      prev.map(tx => tx.hash === hash ? { ...tx, status } : tx)
-    );
-  }, []);
+    setTxHistory(prev => {
+      const newHistory = prev.map(tx => tx.hash === hash ? { ...tx, status } : tx);
+      if (address) {
+        saveTxHistory(address, newHistory);
+      }
+      return newHistory;
+    });
+  }, [address]);
 
   // 获取 Etherscan 链接
   const getEtherscanUrl = useCallback((hash: string) => {
@@ -126,6 +174,10 @@ export function useContracts(signer: JsonRpcSigner | null, address: string | nul
         allowance: formatEther(allowance),
         isLoading: false
       });
+
+      // 重新加载交易历史（包括 Swap 添加的记录）
+      const history = loadTxHistory(address);
+      setTxHistory(history);
     } catch (error) {
       console.error('Error fetching data:', error);
       setState(prev => ({ ...prev, isLoading: false }));

@@ -40,12 +40,13 @@ function App() {
 
   // 获取交易类型显示名称
   const getTxTypeName = (type: TxRecord['type']) => {
-    const names = {
+    const names: Record<TxRecord['type'], string> = {
       deposit: '存入',
       withdraw: '提取',
       mint: '铸造',
       burn: '还款',
-      approve: '授权'
+      approve: '授权',
+      swap: '交换'
     };
     return names[type];
   };
@@ -205,10 +206,10 @@ function App() {
                 </button>
 
                 {/* 交易历史 */}
-                {contracts.txHistory.length > 0 && (
-                  <div className="tx-history">
-                    <h4>最近交易</h4>
-                    {contracts.txHistory.slice(0, 5).map((tx) => (
+                <div className="tx-history">
+                  <h4>交易历史</h4>
+                  {contracts.txHistory.length > 0 ? (
+                    contracts.txHistory.slice(0, 10).map((tx) => (
                       <div key={tx.hash} className={`tx-item tx-${tx.status}`}>
                         <div className="tx-info">
                           <span className="tx-type">{getTxTypeName(tx.type)}</span>
@@ -231,9 +232,11 @@ function App() {
                           </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  ) : (
+                    <div className="tx-empty">暂无交易记录</div>
+                  )}
+                </div>
               </div>
 
               {/* 中间：仓位信息 */}
