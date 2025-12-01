@@ -2,6 +2,10 @@
 
 一个参考 Synthetix 和 MakerDAO (DSS) 设计的合成资产协议。
 
+**Live Demo**: https://megfi.vercel.app
+
+**Network**: Sepolia Testnet
+
 ## 系统架构
 
 ```
@@ -30,8 +34,8 @@
 | 代币 | 符号 | 描述 |
 |-----|------|------|
 | MegFi USD | **mUSD** | 锚定美元的稳定币 |
-| MegFi ETH | **mETH** | 合成以太坊 |
 | MegFi BTC | **mBTC** | 合成比特币 |
+| MegFi GOLD | **mGOLD** | 合成黄金 |
 
 ## 核心合约
 
