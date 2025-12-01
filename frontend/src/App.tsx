@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useWallet } from './hooks/useWallet';
 import { useContracts, TxRecord } from './hooks/useContracts';
 import { Swap } from './components/Swap';
+import { Liquidation } from './components/Liquidation';
 import './App.css';
 
 function App() {
   const wallet = useWallet();
   const contracts = useContracts(wallet.signer, wallet.address);
 
-  const [activeTab, setActiveTab] = useState<'vault' | 'swap'>('vault');
+  const [activeTab, setActiveTab] = useState<'vault' | 'swap' | 'liquidate'>('vault');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [mintAmount, setMintAmount] = useState('');
@@ -156,6 +157,12 @@ function App() {
                 onClick={() => setActiveTab('swap')}
               >
                 Swap
+              </button>
+              <button
+                className={`tab-btn ${activeTab === 'liquidate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('liquidate')}
+              >
+                Liquidate
               </button>
             </div>
 
@@ -396,6 +403,14 @@ function App() {
 
             {activeTab === 'swap' && (
               <Swap
+                signer={wallet.signer}
+                address={wallet.address}
+                onRefresh={contracts.refresh}
+              />
+            )}
+
+            {activeTab === 'liquidate' && (
+              <Liquidation
                 signer={wallet.signer}
                 address={wallet.address}
                 onRefresh={contracts.refresh}

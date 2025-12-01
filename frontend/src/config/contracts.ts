@@ -39,12 +39,19 @@ export const VAULT_ABI = [
   "function withdraw(uint256 amount) external",
   "function mint(uint256 amount) external",
   "function burn(uint256 amount) external",
+  "function liquidate(address account) external",
   "function getPosition(address user) external view returns (uint256 collateral, uint256 debt)",
   "function maxMintable(address user) external view returns (uint256)",
   "function getCollateralRatio(address user) external view returns (uint256)",
+  "function isLiquidatable(address user) external view returns (bool)",
   "function collateralToken() external view returns (address)",
   "function minCollateralRatio() external view returns (uint256)",
-  "function liquidationRatio() external view returns (uint256)"
+  "function liquidationRatio() external view returns (uint256)",
+  "function liquidationPenalty() external view returns (uint256)",
+  "function totalCollateral() external view returns (uint256)",
+  "function totalDebt() external view returns (uint256)",
+  "event CollateralDeposited(address indexed account, uint256 amount)",
+  "event PositionLiquidated(address indexed account, address indexed liquidator, uint256 debtLiquidated, uint256 collateralSeized)"
 ];
 
 // MegToken (ERC20) ABI

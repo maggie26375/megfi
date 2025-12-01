@@ -33,3 +33,4 @@ coverage.json
 frontend/node_modules
 frontend/build
 frontend/.vercel
+.vercel
