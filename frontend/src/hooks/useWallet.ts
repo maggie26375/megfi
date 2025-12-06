@@ -60,12 +60,16 @@ export function useWallet() {
 
   // 连接钱包
   const connect = useCallback(async () => {
+    console.log('connect() called, window.ethereum:', !!window.ethereum);
+
     if (!window.ethereum) {
+      console.log('MetaMask not found');
       setState(prev => ({ ...prev, error: '请安装 MetaMask!' }));
       return;
     }
 
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
+    console.log('Requesting accounts...');
 
     try {
       const provider = new BrowserProvider(window.ethereum);
