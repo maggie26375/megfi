@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Contract, formatEther, JsonRpcSigner, BrowserProvider } from 'ethers';
+import { Contract, formatEther, JsonRpcSigner, BrowserProvider, encodeBytes32String } from 'ethers';
 import { ADDRESSES, VAULT_ABI, TOKEN_ABI, ORACLE_ABI, NETWORK } from '../config/contracts';
 import { TxRecord, loadTxHistory, saveTxHistory } from '../hooks/useContracts';
 
@@ -18,6 +18,14 @@ interface LiquidatablePosition {
   reward: string; // 清算者可获得的抵押品
 }
 
+interface OSMStatus {
+  currentPrice: string;      // 当前生效价格（清算用）
+  nextPrice: string;         // 下一个待生效价格
+  nextPriceTime: number;     // 下一个价格生效时间戳
+  spotPrice: string;         // 实时价格
+  osmEnabled: boolean;       // OSM 是否启用
+}
+
 export function Liquidation({ signer, address, onRefresh }: LiquidationProps) {
   const [positions, setPositions] = useState<LiquidatablePosition[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +37,8 @@ export function Liquidation({ signer, address, onRefresh }: LiquidationProps) {
   const [ethPrice, setEthPrice] = useState('0');
   const [liquidationPenalty, setLiquidationPenalty] = useState('0');
   const [searchAddress, setSearchAddress] = useState('');
+  const [osmStatus, setOsmStatus] = useState<OSMStatus | null>(null);
+  const [countdown, setCountdown] = useState<string>('');
 
   // 加载系统参数和余额
   const loadSystemData = useCallback(async () => {
@@ -39,15 +49,37 @@ export function Liquidation({ signer, address, onRefresh }: LiquidationProps) {
       const musd = new Contract(ADDRESSES.mUSD, TOKEN_ABI, signer);
       const oracle = new Contract(ADDRESSES.priceOracle, ORACLE_ABI, signer);
 
-      const [balance, price, penalty] = await Promise.all([
+      const COLLATERAL_KEY = encodeBytes32String("COLLATERAL");
+
+      const [balance, price, penalty, osmEnabled] = await Promise.all([
         musd.balanceOf(address),
         oracle.getCollateralPrice(),
-        vault.liquidationPenalty()
+        vault.liquidationPenalty(),
+        oracle.osmEnabled().catch(() => false)
       ]);
 
       setMyMusdBalance(formatEther(balance));
       setEthPrice(formatEther(price));
       setLiquidationPenalty(formatEther(penalty));
+
+      // 加载 OSM 状态
+      if (osmEnabled) {
+        try {
+          const osmData = await oracle.getOSMStatus(COLLATERAL_KEY);
+          setOsmStatus({
+            currentPrice: formatEther(osmData[0]),
+            nextPrice: osmData[1] > 0 ? formatEther(osmData[1]) : '',
+            nextPriceTime: Number(osmData[2]),
+            spotPrice: formatEther(osmData[3]),
+            osmEnabled: true
+          });
+        } catch (e) {
+          console.error('Load OSM status error:', e);
+          setOsmStatus({ currentPrice: formatEther(price), nextPrice: '', nextPriceTime: 0, spotPrice: formatEther(price), osmEnabled: false });
+        }
+      } else {
+        setOsmStatus({ currentPrice: formatEther(price), nextPrice: '', nextPriceTime: 0, spotPrice: formatEther(price), osmEnabled: false });
+      }
     } catch (e) {
       console.error('Load system data error:', e);
     }
@@ -56,6 +88,32 @@ export function Liquidation({ signer, address, onRefresh }: LiquidationProps) {
   useEffect(() => {
     loadSystemData();
   }, [loadSystemData]);
+
+  // OSM 倒计时更新
+  useEffect(() => {
+    if (!osmStatus?.nextPriceTime || osmStatus.nextPriceTime === 0) {
+      setCountdown('');
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = osmStatus.nextPriceTime - now;
+
+      if (remaining <= 0) {
+        setCountdown('即将生效');
+        loadSystemData(); // 刷新数据
+      } else {
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        setCountdown(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      }
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [osmStatus?.nextPriceTime, loadSystemData]);
 
   // 搜索可清算仓位
   const searchLiquidatable = useCallback(async () => {
@@ -226,6 +284,35 @@ export function Liquidation({ signer, address, onRefresh }: LiquidationProps) {
       <p className="liquidation-desc">
         当仓位抵押率低于 120% 时可被清算。清算者偿还债务后获得抵押品（扣除 10% 罚金）。
       </p>
+
+      {/* OSM 价格状态 */}
+      {osmStatus?.osmEnabled && (
+        <div className="osm-status">
+          <div className="osm-header">
+            <span className="osm-badge">OSM 延迟保护已启用</span>
+            <span className="osm-delay">30 分钟延迟</span>
+          </div>
+          <div className="osm-prices">
+            <div className="osm-price-item">
+              <span className="osm-label">实时价格</span>
+              <span className="osm-value spot">${formatNumber(osmStatus.spotPrice, 2)}</span>
+              <span className="osm-hint">用户可见</span>
+            </div>
+            <div className="osm-arrow">→</div>
+            <div className="osm-price-item">
+              <span className="osm-label">清算价格</span>
+              <span className="osm-value current">${formatNumber(osmStatus.currentPrice, 2)}</span>
+              <span className="osm-hint">系统使用</span>
+            </div>
+          </div>
+          {osmStatus.nextPrice && (
+            <div className="osm-pending">
+              <span>待生效价格: ${formatNumber(osmStatus.nextPrice, 2)}</span>
+              <span className="osm-countdown">{countdown}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 我的信息 */}
       <div className="liquidation-info">

@@ -99,20 +99,44 @@ contract CollateralVault is Owned, MixinResolver, ReentrancyGuard, ICollateralVa
         return (collateralValue * PRECISION) / debtValue;
     }
 
-    /// @notice 检查仓位是否可被清算
+    /// @notice 检查仓位是否可被清算（使用 OSM 延迟价格）
     function isLiquidatable(address account) public view override returns (bool) {
         Position memory pos = positions[account];
         if (pos.debt == 0) return false;
 
-        uint256 ratio = getCollateralRatio(account);
+        uint256 ratio = getCollateralRatioForLiquidation(account);
         return ratio < liquidationRatio;
     }
 
-    /// @notice 获取抵押品价值 (以 mUSD 计价)
+    /// @notice 获取清算用抵押率（使用 OSM 延迟价格）
+    function getCollateralRatioForLiquidation(address account) public view returns (uint256) {
+        Position memory pos = positions[account];
+        if (pos.debt == 0) return type(uint256).max;
+
+        uint256 collateralValue = _getCollateralValueForLiquidation(pos.collateral);
+        uint256 debtValue = _getDebtValue(pos.debt);
+
+        return (collateralValue * PRECISION) / debtValue;
+    }
+
+    /// @notice 获取抵押品价值 (以 mUSD 计价) - 使用实时价格
+    /// @dev 用于铸造、提取等非清算操作
     function _getCollateralValue(uint256 collateralAmount) internal view returns (uint256) {
-        // 调用 PriceOracle 获取价格
+        // 调用 PriceOracle 获取实时价格
         (bool success, bytes memory data) = priceOracle().staticcall(
             abi.encodeWithSignature("getCollateralPrice()")
+        );
+        require(success, "Price oracle call failed");
+        uint256 price = abi.decode(data, (uint256));
+        return (collateralAmount * price) / PRECISION;
+    }
+
+    /// @notice 获取抵押品价值 (以 mUSD 计价) - 使用 OSM 延迟价格
+    /// @dev 仅用于清算判断
+    function _getCollateralValueForLiquidation(uint256 collateralAmount) internal view returns (uint256) {
+        // 调用 PriceOracle 获取 OSM 延迟价格
+        (bool success, bytes memory data) = priceOracle().staticcall(
+            abi.encodeWithSignature("getCollateralSettlementPrice()")
         );
         require(success, "Price oracle call failed");
         uint256 price = abi.decode(data, (uint256));

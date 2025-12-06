@@ -1020,6 +1020,106 @@ body {
   font-size: 0.95rem;
 }
 
+/* OSM Status Styles */
+.osm-status {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(0, 212, 255, 0.15) 100%);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.osm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.osm-badge {
+  background: linear-gradient(90deg, #7c3aed, #00d4ff);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.osm-delay {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.osm-prices {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.osm-price-item {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.osm-label {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.25rem;
+}
+
+.osm-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.osm-value.spot {
+  color: #00d4ff;
+}
+
+.osm-value.current {
+  color: #7c3aed;
+}
+
+.osm-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.osm-arrow {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.25rem;
+}
+
+.osm-pending {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.osm-pending span:first-child {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.osm-countdown {
+  color: #fbbf24;
+  font-weight: 600;
+  font-family: monospace;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .content-grid {

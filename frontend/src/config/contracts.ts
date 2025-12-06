@@ -43,6 +43,7 @@ export const VAULT_ABI = [
   "function getPosition(address user) external view returns (uint256 collateral, uint256 debt)",
   "function maxMintable(address user) external view returns (uint256)",
   "function getCollateralRatio(address user) external view returns (uint256)",
+  "function getCollateralRatioForLiquidation(address user) external view returns (uint256)",
   "function isLiquidatable(address user) external view returns (bool)",
   "function collateralToken() external view returns (address)",
   "function minCollateralRatio() external view returns (uint256)",
@@ -67,7 +68,13 @@ export const TOKEN_ABI = [
 // PriceOracle ABI
 export const ORACLE_ABI = [
   "function getCollateralPrice() external view returns (uint256)",
-  "function getPrice(bytes32 currencyKey) external view returns (uint256 price, bool isValid)"
+  "function getCollateralSettlementPrice() external view returns (uint256)",
+  "function getPrice(bytes32 currencyKey) external view returns (uint256 price, bool isValid)",
+  "function getSettlementPrice(bytes32 currencyKey) external view returns (uint256 price, bool isValid)",
+  "function getOSMStatus(bytes32 currencyKey) external view returns (uint256 currentPrice, uint256 nextPrice, uint256 nextPriceEffectiveTime, uint256 spotPrice)",
+  "function osmEnabled() external view returns (bool)",
+  "function poke(bytes32 currencyKey) external",
+  "function initializeOSMPrice(bytes32 currencyKey, uint256 price) external"
 ];
 
 // MegSwap ABI

@@ -185,4 +185,99 @@ describe("MegFi Protocol", function () {
       ).to.be.revertedWith("You must be nominated before you can accept ownership");
     });
   });
+
+  describe("OSM (Oracle Security Module)", function () {
+    it("should have OSM enabled by default", async function () {
+      expect(await priceOracle.osmEnabled()).to.be.true;
+    });
+
+    it("should allow owner to initialize OSM price", async function () {
+      await priceOracle.initializeOSMPrice(collateralKey, ethers.parseEther("2000"));
+
+      const [currentPrice, nextPrice, nextPriceTime, spotPrice] = await priceOracle.getOSMStatus(collateralKey);
+      expect(currentPrice).to.equal(ethers.parseEther("2000"));
+      expect(spotPrice).to.equal(ethers.parseEther("2000"));
+    });
+
+    it("should queue new price with delay when poked", async function () {
+      // 先初始化 OSM 价格
+      await priceOracle.initializeOSMPrice(collateralKey, ethers.parseEther("2000"));
+
+      // 改变实时价格
+      await priceOracle.setManualPrice(collateralKey, ethers.parseEther("1800"));
+
+      // Poke 触发价格更新
+      await priceOracle.poke(collateralKey);
+
+      const [currentPrice, nextPrice, nextPriceTime, spotPrice] = await priceOracle.getOSMStatus(collateralKey);
+
+      // 当前价格应该还是 2000
+      expect(currentPrice).to.equal(ethers.parseEther("2000"));
+      // 下一个价格应该是 1800（待生效）
+      expect(nextPrice).to.equal(ethers.parseEther("1800"));
+      // 实时价格是 1800
+      expect(spotPrice).to.equal(ethers.parseEther("1800"));
+      // 生效时间应该在未来
+      expect(nextPriceTime).to.be.greaterThan(0);
+    });
+
+    it("should return settlement price (delayed) for liquidation", async function () {
+      // 初始化 OSM 价格
+      await priceOracle.initializeOSMPrice(collateralKey, ethers.parseEther("2000"));
+
+      // 改变实时价格
+      await priceOracle.setManualPrice(collateralKey, ethers.parseEther("1800"));
+
+      // Poke
+      await priceOracle.poke(collateralKey);
+
+      // 获取 settlement 价格（应该是延迟后的价格，即 2000）
+      const settlementPrice = await priceOracle.getCollateralSettlementPrice();
+      expect(settlementPrice).to.equal(ethers.parseEther("2000"));
+
+      // 实时价格应该是 1800
+      const spotPrice = await priceOracle.getCollateralPrice();
+      expect(spotPrice).to.equal(ethers.parseEther("1800"));
+    });
+
+    it("should allow owner to disable OSM", async function () {
+      await priceOracle.setOSMEnabled(false);
+      expect(await priceOracle.osmEnabled()).to.be.false;
+    });
+
+    it("should use spot price when OSM is disabled", async function () {
+      // 初始化 OSM 价格
+      await priceOracle.initializeOSMPrice(collateralKey, ethers.parseEther("2000"));
+
+      // 改变实时价格
+      await priceOracle.setManualPrice(collateralKey, ethers.parseEther("1800"));
+
+      // 禁用 OSM
+      await priceOracle.setOSMEnabled(false);
+
+      // settlement 价格应该等于实时价格
+      const [settlementPrice, isValid] = await priceOracle.getSettlementPrice(collateralKey);
+      expect(settlementPrice).to.equal(ethers.parseEther("1800"));
+    });
+
+    it("should activate pending price after delay", async function () {
+      // 初始化 OSM 价格
+      await priceOracle.initializeOSMPrice(collateralKey, ethers.parseEther("2000"));
+
+      // 改变实时价格并 poke
+      await priceOracle.setManualPrice(collateralKey, ethers.parseEther("1800"));
+      await priceOracle.poke(collateralKey);
+
+      // 前进 31 分钟
+      await ethers.provider.send("evm_increaseTime", [31 * 60]);
+      await ethers.provider.send("evm_mine");
+
+      // 激活价格
+      await priceOracle.activate(collateralKey);
+
+      // 现在 settlement 价格应该是 1800
+      const settlementPrice = await priceOracle.getCollateralSettlementPrice();
+      expect(settlementPrice).to.equal(ethers.parseEther("1800"));
+    });
+  });
 });
