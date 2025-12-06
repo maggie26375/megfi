@@ -2,7 +2,7 @@ import { encodeBytes32String } from 'ethers';
 
 // 合约地址 (Sepolia)
 export const ADDRESSES = {
-  priceOracle: "0xDD8d0D91B1C99D93123712461DA5F8013ee7C0BD",
+  priceOracle: "0x5C6A0C6F149f70816a65a4BD0b5D905cE801503b",
   megTokenIssuer: "0x9a6279D85ece04195C31D609B4Fc973dfD007b7B",
   mUSD: "0x88316D830419D6f270Cc664d15DB1bb82ac2C20A",
   mBTC: "0x83A2C107174CD84E2c43c0c85A4A145714B0Cf52",
